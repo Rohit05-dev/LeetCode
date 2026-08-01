@@ -27,8 +27,8 @@ Each problem lives in its own folder named `NNNN-kebab-case-title`, matching Lee
 
 ## Stats
 
-- **Total solved:** 1
-- **Easy / Medium / Hard:** 1 / 0 / 0
+- **Total solved:** 2
+- **Easy / Medium / Hard:** 2 / 0 / 0
 
 ## Notes
 
