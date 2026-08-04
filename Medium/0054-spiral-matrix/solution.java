@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 
-public class solution {
+class solution {
     public ArrayList<Integer> spiralOrder(int[][] matrix) {
 
         int m = matrix.length;
