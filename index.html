@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DSA Tracker</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2128; --border:#30363d;
+    --text:#e6edf3; --text-dim:#8b949e; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --easy:#3fb950; --medium:#d29922; --hard:#f85149; --accent:#58a6ff;
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--text); font-family:var(--mono); margin:0; padding:24px;}
+  .wrap{max-width:960px; margin:0 auto;}
+  h1{font-size:18px; font-weight:600; margin:0 0 4px; letter-spacing:0.3px;}
+  .sub{color:var(--text-dim); font-size:12px; margin:0 0 20px;}
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px;}
+  .stat{background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:10px 12px;}
+  .stat .n{font-size:20px; font-weight:600;}
+  .stat .l{font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px;}
+  .stat.easy .n{color:var(--easy);} .stat.medium .n{color:var(--medium);} .stat.hard .n{color:var(--hard);} .stat.total .n{color:var(--accent);}
+  .bar{height:6px; background:var(--panel2); border-radius:3px; overflow:hidden; margin-bottom:20px; display:flex;}
+  .bar div{height:100%;}
+  .controls{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
+  input[type=text]{background:var(--panel); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:12px; padding:7px 10px; border-radius:6px; flex:1; min-width:140px;}
+  select{background:var(--panel); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:12px; padding:7px 10px; border-radius:6px;}
+  .chip{border:1px solid var(--border); background:var(--panel); color:var(--text-dim); font-size:11px; padding:5px 10px; border-radius:14px; cursor:pointer; user-select:none;}
+  .chip.active{border-color:var(--accent); color:var(--accent);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{text-align:left; color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; padding:6px 8px; border-bottom:1px solid var(--border);}
+  tbody tr{border-bottom:1px solid var(--border);}
+  tbody tr:hover{background:var(--panel2);}
+  tbody td{padding:7px 8px; vertical-align:middle;}
+  tbody tr.done td.name{color:var(--text-dim); text-decoration:line-through;}
+  .diff{font-size:10px; padding:2px 7px; border-radius:10px; font-weight:600;}
+  .diff.Easy{color:var(--easy); background:rgba(63,185,80,0.12);}
+  .diff.Medium{color:var(--medium); background:rgba(210,153,34,0.12);}
+  .diff.Hard{color:var(--hard); background:rgba(248,81,73,0.12);}
+  .topic{color:var(--text-dim); font-size:11px;}
+  .cb{width:15px; height:15px; accent-color:var(--accent); cursor:pointer;}
+  .status{font-size:11px; color:var(--text-dim); margin-top:14px; min-height:14px;}
+  .group-hdr td{padding-top:16px; padding-bottom:4px; color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.7px; border-bottom:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>// dsa_tracker</h1>
+  <p class="sub">LeetCode practice tracker — click a row to toggle solved</p>
+
+  <div class="stats">
+    <div class="stat total"><div class="n" id="statTotal">0/0</div><div class="l">Total</div></div>
+    <div class="stat easy"><div class="n" id="statEasy">0/0</div><div class="l">Easy</div></div>
+    <div class="stat medium"><div class="n" id="statMedium">0/0</div><div class="l">Medium</div></div>
+    <div class="stat hard"><div class="n" id="statHard">0/0</div><div class="l">Hard</div></div>
+  </div>
+  <div class="bar" id="bar"></div>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="filter by name or topic...">
+    <select id="diffFilter">
+      <option value="all">All difficulties</option>
+      <option value="Easy">Easy</option>
+      <option value="Medium">Medium</option>
+      <option value="Hard">Hard</option>
+    </select>
+    <span class="chip active" id="chipAll">All</span>
+    <span class="chip" id="chipSolved">Solved</span>
+    <span class="chip" id="chipUnsolved">Unsolved</span>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:28px;"></th><th>Problem</th><th style="width:120px;">Topic</th><th style="width:70px;">Level</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const PROBLEMS = [
+["Two Sum","Arrays & Hashing","Easy",true],
+["Contains Duplicate","Arrays & Hashing","Easy",true],
+["Valid Anagram","Arrays & Hashing","Easy",true],
+["Best Time to Buy and Sell Stock","Arrays & Hashing","Easy",false],
+["Majority Element","Arrays & Hashing","Easy",false],
+["Find Missing Elements","Arrays & Hashing","Easy",true],
+["Group Anagrams","Arrays & Hashing","Medium",false],
+["Top K Frequent Elements","Arrays & Hashing","Medium",false],
+["Product of Array Except Self","Arrays & Hashing","Medium",false],
+["Encode and Decode Strings","Arrays & Hashing","Medium",false],
+["Longest Consecutive Sequence","Arrays & Hashing","Medium",false],
+["Spiral Matrix","Arrays & Hashing","Medium",true],
+["Rotate Array","Arrays & Hashing","Medium",true],
+["First Missing Positive","Arrays & Hashing","Hard",false],
+["Valid Palindrome","Two Pointers","Easy",false],
+["Merge Sorted Array","Two Pointers","Easy",false],
+["Two Sum II","Two Pointers","Medium",false],
+["3Sum","Two Pointers","Medium",false],
+["Container With Most Water","Two Pointers","Medium",false],
+["Trapping Rain Water","Two Pointers","Hard",false],
+["Maximum Average Subarray I","Sliding Window","Easy",false],
+["Longest Substring Without Repeating Characters","Sliding Window","Medium",false],
+["Longest Repeating Character Replacement","Sliding Window","Medium",false],
+["Permutation in String","Sliding Window","Medium",false],
+["Minimum Size Subarray Sum","Sliding Window","Medium",false],
+["Sliding Window Maximum","Sliding Window","Hard",false],
+["Minimum Window Substring","Sliding Window","Hard",false],
+["Valid Parentheses","Stack","Easy",true],
+["Baseball Game","Stack","Easy",false],
+["Evaluate Reverse Polish Notation","Stack","Medium",false],
+["Daily Temperatures","Stack","Medium",false],
+["Generate Parentheses","Stack","Medium",false],
+["Min Stack","Stack","Medium",false],
+["Largest Rectangle in Histogram","Stack","Hard",false],
+["Binary Search","Binary Search","Easy",false],
+["First Bad Version","Binary Search","Easy",false],
+["Search in Rotated Sorted Array","Binary Search","Medium",false],
+["Find Minimum in Rotated Sorted Array","Binary Search","Medium",false],
+["Koko Eating Bananas","Binary Search","Medium",false],
+["Median of Two Sorted Arrays","Binary Search","Hard",false],
+["Reverse Linked List","Linked List","Easy",false],
+["Merge Two Sorted Lists","Linked List","Easy",false],
+["Linked List Cycle","Linked List","Easy",false],
+["Reorder List","Linked List","Medium",false],
+["Remove Nth Node From End of List","Linked List","Medium",false],
+["Add Two Numbers","Linked List","Medium",false],
+["Copy List with Random Pointer","Linked List","Medium",false],
+["Merge k Sorted Lists","Linked List","Hard",false],
+["Reverse Nodes in k-Group","Linked List","Hard",false],
+["Invert Binary Tree","Trees","Easy",false],
+["Maximum Depth of Binary Tree","Trees","Easy",false],
+["Same Tree","Trees","Easy",false],
+["Subtree of Another Tree","Trees","Easy",false],
+["Binary Tree Level Order Traversal","Trees","Medium",false],
+["Validate Binary Search Tree","Trees","Medium",false],
+["Kth Smallest Element in a BST","Trees","Medium",false],
+["Lowest Common Ancestor of a BST","Trees","Medium",false],
+["Construct Binary Tree from Preorder and Inorder Traversal","Trees","Medium",false],
+["Binary Tree Maximum Path Sum","Trees","Hard",false],
+["Serialize and Deserialize Binary Tree","Trees","Hard",false],
+["Kth Largest Element in a Stream","Heap / Priority Queue","Easy",false],
+["Last Stone Weight","Heap / Priority Queue","Easy",false],
+["K Closest Points to Origin","Heap / Priority Queue","Medium",false],
+["Kth Largest Element in an Array","Heap / Priority Queue","Medium",true],
+["Task Scheduler","Heap / Priority Queue","Medium",false],
+["Find Median from Data Stream","Heap / Priority Queue","Hard",false],
+["Sliding Window Median","Heap / Priority Queue","Hard",false],
+["Subsets","Backtracking","Medium",false],
+["Combination Sum","Backtracking","Medium",false],
+["Permutations","Backtracking","Medium",false],
+["Word Search","Backtracking","Medium",false],
+["Palindrome Partitioning","Backtracking","Medium",false],
+["N-Queens","Backtracking","Hard",false],
+["Flood Fill","Graphs","Easy",false],
+["Number of Islands","Graphs","Medium",false],
+["Clone Graph","Graphs","Medium",false],
+["Course Schedule","Graphs","Medium",false],
+["Pacific Atlantic Water Flow","Graphs","Medium",false],
+["Rotting Oranges","Graphs","Medium",false],
+["Word Ladder","Graphs","Hard",false],
+["Alien Dictionary","Graphs","Hard",false],
+["Climbing Stairs","DP (1-D)","Easy",false],
+["House Robber","DP (1-D)","Easy",false],
+["House Robber II","DP (1-D)","Medium",false],
+["Longest Increasing Subsequence","DP (1-D)","Medium",false],
+["Coin Change","DP (1-D)","Medium",false],
+["Word Break","DP (1-D)","Medium",false],
+["Decode Ways","DP (1-D)","Medium",false],
+["Palindrome Partitioning II","DP (1-D)","Hard",false],
+["Unique Paths","DP (2-D)","Medium",false],
+["Longest Common Subsequence","DP (2-D)","Medium",false],
+["Edit Distance","DP (2-D)","Hard",false],
+["Distinct Subsequences","DP (2-D)","Hard",false],
+["Maximum Subarray","Greedy","Easy",false],
+["Jump Game","Greedy","Medium",false],
+["Gas Station","Greedy","Medium",false],
+["Candy","Greedy","Hard",false],
+["Insert Interval","Intervals","Medium",false],
+["Merge Intervals","Intervals","Medium",false],
+["Non-overlapping Intervals","Intervals","Medium",false],
+["Number of 1 Bits","Bit Manipulation","Easy",false],
+["Counting Bits","Bit Manipulation","Easy",false],
+["Missing Number","Bit Manipulation","Easy",false],
+["Maximum XOR of Two Numbers in an Array","Bit Manipulation","Hard",false]
+].map((p,i)=>({id:'p'+i, name:p[0], topic:p[1], diff:p[2], seed:p[3]}));
+
+let progress = {};
+let filterText = "";
+let filterDiff = "all";
+let filterStatus = "all";
+
+function slugKey(){ return "dsa-tracker-progress"; }
+
+async function loadProgress(){
+  try{
+    const res = await window.storage.get(slugKey(), false);
+    if(res && res.value){ progress = JSON.parse(res.value); }
+  }catch(e){ progress = {}; }
+  PROBLEMS.forEach(p=>{ if(!(p.id in progress)) progress[p.id] = p.seed; });
+  await saveProgress();
+}
+
+async function saveProgress(){
+  try{
+    await window.storage.set(slugKey(), JSON.stringify(progress), false);
+    setStatus("saved");
+  }catch(e){ setStatus("save failed — progress kept in this session only"); }
+}
+
+function setStatus(msg){
+  document.getElementById('status').textContent = msg;
+  setTimeout(()=>{ document.getElementById('status').textContent = ""; }, 1500);
+}
+
+function render(){
+  const tbody = document.getElementById('rows');
+  tbody.innerHTML = "";
+  const groups = {};
+  PROBLEMS.forEach(p=>{
+    if(filterDiff !== "all" && p.diff !== filterDiff) return;
+    const solved = !!progress[p.id];
+    if(filterStatus === "solved" && !solved) return;
+    if(filterStatus === "unsolved" && solved) return;
+    const q = filterText.toLowerCase();
+    if(q && !p.name.toLowerCase().includes(q) && !p.topic.toLowerCase().includes(q)) return;
+    if(!groups[p.topic]) groups[p.topic] = [];
+    groups[p.topic].push(p);
+  });
+
+  Object.keys(groups).forEach(topic=>{
+    const hdr = document.createElement('tr');
+    hdr.className = 'group-hdr';
+    hdr.innerHTML = `<td></td><td colspan="3">${topic}</td>`;
+    tbody.appendChild(hdr);
+    groups[topic].forEach(p=>{
+      const solved = !!progress[p.id];
+      const tr = document.createElement('tr');
+      if(solved) tr.classList.add('done');
+      tr.style.cursor = 'pointer';
+      tr.innerHTML = `
+        <td><input type="checkbox" class="cb" ${solved?'checked':''}></td>
+        <td class="name">${p.name}</td>
+        <td class="topic">${p.topic}</td>
+        <td><span class="diff ${p.diff}">${p.diff}</span></td>
+      `;
+      const cb = tr.querySelector('.cb');
+      const toggle = async ()=>{
+        progress[p.id] = !progress[p.id];
+        await saveProgress();
+        render();
+        updateStats();
+      };
+      tr.addEventListener('click', (e)=>{ if(e.target !== cb) toggle(); });
+      cb.addEventListener('click', (e)=>{ e.stopPropagation(); toggle(); });
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function updateStats(){
+  const byDiff = {Easy:[0,0], Medium:[0,0], Hard:[0,0]};
+  let solvedTotal = 0;
+  PROBLEMS.forEach(p=>{
+    byDiff[p.diff][1]++;
+    if(progress[p.id]){ byDiff[p.diff][0]++; solvedTotal++; }
+  });
+  document.getElementById('statTotal').textContent = solvedTotal + "/" + PROBLEMS.length;
+  document.getElementById('statEasy').textContent = byDiff.Easy[0] + "/" + byDiff.Easy[1];
+  document.getElementById('statMedium').textContent = byDiff.Medium[0] + "/" + byDiff.Medium[1];
+  document.getElementById('statHard').textContent = byDiff.Hard[0] + "/" + byDiff.Hard[1];
+
+  const bar = document.getElementById('bar');
+  bar.innerHTML = "";
+  const total = PROBLEMS.length;
+  [['easy',byDiff.Easy[0]],['medium',byDiff.Medium[0]],['hard',byDiff.Hard[0]]].forEach(([cls,n])=>{
+    if(n>0){
+      const seg = document.createElement('div');
+      seg.style.width = (n/total*100)+"%";
+      seg.style.background = getComputedStyle(document.documentElement).getPropertyValue('--'+cls);
+      bar.appendChild(seg);
+    }
+  });
+}
+
+document.getElementById('search').addEventListener('input', e=>{ filterText = e.target.value; render(); });
+document.getElementById('diffFilter').addEventListener('change', e=>{ filterDiff = e.target.value; render(); });
+document.getElementById('chipAll').addEventListener('click', ()=>{ setChip('all'); });
+document.getElementById('chipSolved').addEventListener('click', ()=>{ setChip('solved'); });
+document.getElementById('chipUnsolved').addEventListener('click', ()=>{ setChip('unsolved'); });
+function setChip(v){
+  filterStatus = v;
+  ['chipAll','chipSolved','chipUnsolved'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById('chip'+v.charAt(0).toUpperCase()+v.slice(1)).classList.add('active');
+  render();
+}
+
+(async function init(){
+  await loadProgress();
+  render();
+  updateStats();
+})();
+</script>
+</body>
+</html>
