@@ -192,8 +192,8 @@ function slugKey(){ return "dsa-tracker-progress"; }
 
 async function loadProgress(){
   try{
-    const res = await window.storage.get(slugKey(), false);
-    if(res && res.value){ progress = JSON.parse(res.value); }
+    const raw = localStorage.getItem(slugKey());
+    if(raw){ progress = JSON.parse(raw); }
   }catch(e){ progress = {}; }
   PROBLEMS.forEach(p=>{ if(!(p.id in progress)) progress[p.id] = p.seed; });
   await saveProgress();
@@ -201,7 +201,7 @@ async function loadProgress(){
 
 async function saveProgress(){
   try{
-    await window.storage.set(slugKey(), JSON.stringify(progress), false);
+    localStorage.setItem(slugKey(), JSON.stringify(progress));
     setStatus("saved");
   }catch(e){ setStatus("save failed — progress kept in this session only"); }
 }
