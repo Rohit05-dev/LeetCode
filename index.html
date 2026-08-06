@@ -37,6 +37,7 @@
   .diff.Medium{color:var(--medium); background:rgba(210,153,34,0.12);}
   .diff.Hard{color:var(--hard); background:rgba(248,81,73,0.12);}
   .topic{color:var(--text-dim); font-size:11px;}
+    .lc{color:var(--text-dim); font-size:11px;}
   .cb{width:15px; height:15px; accent-color:var(--accent); cursor:pointer;}
   .status{font-size:11px; color:var(--text-dim); margin-top:14px; min-height:14px;}
   .group-hdr td{padding-top:16px; padding-bottom:4px; color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.7px; border-bottom:none;}
@@ -181,7 +182,8 @@ const PROBLEMS = [
 ["Counting Bits","Bit Manipulation","Easy",false],
 ["Missing Number","Bit Manipulation","Easy",false],
 ["Maximum XOR of Two Numbers in an Array","Bit Manipulation","Hard",false]
-].map((p,i)=>({id:'p'+i, name:p[0], topic:p[1], diff:p[2], seed:p[3]}));
+["Smallest Divisible Digit Product I","Math","Easy",true,3345]
+].map((p,i)=>({id:'p'+i, name:p[0], topic:p[1], diff:p[2], seed:p[3], num:p[4]}));
 
 let progress = {};
 let filterText = "";
@@ -238,6 +240,7 @@ function render(){
       tr.style.cursor = 'pointer';
       tr.innerHTML = `
         <td><input type="checkbox" class="cb" ${solved?'checked':''}></td>
+        <td class="lc">${p.num}</td>
         <td class="name">${p.name}</td>
         <td class="topic">${p.topic}</td>
         <td><span class="diff ${p.diff}">${p.diff}</span></td>
